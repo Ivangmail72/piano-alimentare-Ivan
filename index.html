@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cosa mangio · Piano alimentare Ivan</title>
+<meta name="theme-color" content="#2E7D5B">
+<meta name="description" content="Selettore rapido del piano alimentare: scegli il pasto e scopri cosa puoi mangiare.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon-64.png" sizes="64x64" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cosa mangio">
+<style>
+  :root{
+    --green:#2E7D5B;
+    --green-dark:#1f5a41;
+    --green-light:#E8F3EE;
+    --sand:#F6F4EE;
+    --ink:#20241f;
+    --muted:#6b7169;
+    --line:#e2ddd2;
+    --card:#ffffff;
+    --accent:#C6832B;
+    --shadow:0 2px 14px rgba(31,90,65,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--sand);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.45;}
+  body{max-width:560px;margin:0 auto;padding:0 0 40px;min-height:100vh;
+    padding-top:env(safe-area-inset-top);}
+
+  header{padding:26px 20px 20px;text-align:center;}
+  header .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--green);font-weight:700;margin-bottom:6px;}
+  header h1{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.15;}
+  header p{font-size:12.5px;color:var(--muted);margin-top:6px;}
+
+  .step-label{font-size:12px;font-weight:700;letter-spacing:.02em;color:var(--muted);
+    text-transform:uppercase;padding:0 20px;margin:8px 0 10px;}
+
+  /* meal chooser */
+  .meals{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px;}
+  .meal-btn{background:var(--card);border:1.5px solid var(--line);border-radius:16px;
+    padding:16px 12px;text-align:left;cursor:pointer;transition:.15s;
+    display:flex;flex-direction:column;gap:3px;box-shadow:var(--shadow);}
+  .meal-btn .m-emoji{font-size:22px;}
+  .meal-btn .m-name{font-weight:700;font-size:15px;}
+  .meal-btn .m-sub{font-size:11.5px;color:var(--muted);}
+  .meal-btn.active{border-color:var(--green);background:var(--green);}
+  .meal-btn.active .m-name,.meal-btn.active .m-sub{color:#fff;}
+  .meal-btn.active .m-sub{color:var(--green-light);}
+
+  /* conditions */
+  .conditions{padding:18px 20px 4px;}
+  .cond-q{font-size:14px;font-weight:700;margin-bottom:10px;}
+  .cond-opts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .chip{background:var(--card);border:1.5px solid var(--line);border-radius:999px;
+    padding:9px 15px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.15s;color:var(--ink);}
+  .chip.active{background:var(--green-light);border-color:var(--green);color:var(--green-dark);}
+
+  /* results */
+  .results{padding:6px 20px 0;}
+  .block{background:var(--card);border-radius:18px;box-shadow:var(--shadow);
+    margin-bottom:14px;overflow:hidden;border:1px solid var(--line);}
+  .block-head{background:var(--green);color:#fff;padding:12px 16px;font-weight:700;
+    font-size:14px;display:flex;align-items:center;gap:8px;letter-spacing:.01em;}
+  .block-head .tag{margin-left:auto;font-size:10.5px;font-weight:600;background:rgba(255,255,255,.2);
+    padding:3px 8px;border-radius:99px;letter-spacing:.03em;}
+  .block-body{padding:6px 4px 10px;}
+  .grp-label{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+    color:var(--green);padding:12px 16px 4px;}
+  .item{padding:9px 16px;font-size:14.5px;display:flex;gap:10px;align-items:flex-start;}
+  .item:not(:last-child){border-bottom:1px solid #f1eee6;}
+  .item .dot{color:var(--accent);font-weight:800;line-height:1.3;flex:none;}
+  .item .oppure{color:var(--green);font-weight:700;font-size:12px;}
+  .cond-note{font-size:12.5px;color:var(--muted);font-style:italic;padding:10px 16px 4px;}
+
+  .empty{text-align:center;color:var(--muted);padding:50px 30px;font-size:14px;}
+  .empty .big{font-size:34px;margin-bottom:10px;}
+
+  .reminder{background:var(--green-light);border-radius:14px;padding:12px 15px;margin:2px 20px 0;
+    font-size:12.5px;color:var(--green-dark);display:flex;gap:9px;align-items:flex-start;}
+  .reminder b{font-weight:700;}
+
+  footer{text-align:center;font-size:11px;color:var(--muted);padding:24px 20px 0;line-height:1.6;}
+  .divider{height:1px;background:var(--line);margin:22px 20px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Piano alimentare · Ivan</div>
+  <h1>Cosa posso mangiare?</h1>
+  <p>Scegli il pasto, poi rispondi alle domande. Ti mostro le opzioni giuste.</p>
+</header>
+
+<div class="step-label">1 · Scegli il pasto</div>
+<div class="meals" id="meals"></div>
+
+<div class="conditions" id="conditions"></div>
+
+<div class="results" id="results"></div>
+
+<footer>
+  Piano a cura della Dott.ssa Gotti Gloria · Biologa Nutrizionista<br>
+  Riepilogo consultabile — per dubbi fai riferimento al piano completo.
+</footer>
+
+<script>
+/* ---------- DATA ---------- */
+const OPPURE = '<span class="oppure"> · oppure · </span>';
+
+function items(list){ // list of arrays -> each array joined by OPPURE
+  return list.map(alts=>{
+    const txt = Array.isArray(alts)? alts.join(OPPURE) : alts;
+    return `<div class="item"><span class="dot">•</span><span>${txt}</span></div>`;
+  }).join('');
+}
+function group(label, list){
+  return `<div class="grp-label">${label}</div>${items(list)}`;
+}
+
+const MEALS = [
+  {id:'risveglio', emoji:'🌅', name:'Al risveglio', sub:'pre-camminata mattino'},
+  {id:'colazione', emoji:'🥣', name:'Colazione', sub:'3 opzioni'},
+  {id:'pranzo',    emoji:'🍽️', name:'Pranzo',    sub:'fuori o a casa'},
+  {id:'merenda',   emoji:'🍫', name:'Pomeriggio',sub:'pre-camminata'},
+  {id:'cena',      emoji:'🌙', name:'Cena',       sub:'varia le proteine'},
+];
+
+const SNACK = [['2 quadretti cioccolato fondente ≥80% cacao','20g frutta secca senza sale','30g cocco disidratato','5 olive verdi con nocciolo']];
+const CONDIMENTO = [['1 cucchiaio olio EVO','¼ avocado','1 cucchiaino semi oleosi + 1 cucchiaino olio EVO']];
+
+/* condition definitions per meal */
+const CONFIG = {
+  risveglio: { conds:[], render:()=>[
+    {head:'Al risveglio', tag:'solo se cammini al mattino',
+     body: items(SNACK)}
+  ]},
+
+  colazione: { conds:[
+      {key:'opz', q:'Che colazione preferisci oggi?', opts:[
+        {v:'1',l:'Latte + biscotti/torta'},
+        {v:'2',l:'Budino proteico'},
+        {v:'3',l:'Yogurt, miele e noci'},
+      ]}
+    ],
+    render:(s)=>{
+      if(!s.opz) return null;
+      if(s.opz==='1') return [{head:'Colazione · Latte e biscotti', body:
+        items([['Tè/caffè senza zucchero'],
+        ['250ml latte parz. scremato o scremato + 1 misurino proteine whey'],
+        ['40g biscotti senza zuccheri aggiunti (Misura/Galbusera)','30g biscotti da colazione del forno','100g ciambella/torta mele del forno']])}];
+      if(s.opz==='2') return [{head:'Colazione · Budino proteico', body:
+        items([['Tè/caffè senza zucchero'],['1 budino proteico Milk Pro vaniglia o cioccolato']])}];
+      return [{head:'Colazione · Yogurt, miele e noci', body:
+        items([['Tè/caffè senza zucchero'],
+        ['150g yogurt greco bianco 2%','150g skyr bianco','150g kefir yogurt bianco'],
+        ['1 cucchiaino miele + 3 noci']])}];
+    }},
+
+  pranzo: { conds:[
+      {key:'dove', q:'Dove pranzi oggi?', opts:[
+        {v:'mensa',l:'In mensa'},
+        {v:'piadi',l:'In piadineria'},
+        {v:'casa',l:'A casa'},
+      ]},
+      {key:'camm', q:'Hai camminato al mattino?', opts:[
+        {v:'si',l:'Sì, camminata mattino'},
+        {v:'no',l:'No / camminata la sera'},
+      ], showIf:s=>s.dove==='casa'}
+    ],
+    render:(s)=>{
+      if(!s.dove) return null;
+      if(s.dove==='mensa') return [{head:'Pranzo in mensa', body:
+        group('Scegli un carboidrato',[['½ porzione riso o pasta in bianco o al pomodoro'],['1 porzione patate forno/bollite'],['1-2 panini secondo la dimensione']])
+        + group('Scegli una proteina',[['Carne bianca o rossa, cottura semplice (no fritta)'],['Pesce, cottura semplice (no fritta)'],['Frittata/omelette/uova'],['Burger vegetali'],['Legumi o mix legumi']])
+        + group('Scegli una verdura',[['Verdure crude o cotte (no fritte, no patate)']])
+        + `<div class="cond-note">Condisci con 1 bustina/1 cucchiaio olio EVO</div>`}];
+      if(s.dove==='piadi') return [{head:'Pranzo in piadineria', body:
+        items([['1 piadina kamut o farro (se disponibile) + prosciutto crudo + stracchino + rucola']])}];
+      // casa
+      if(!s.camm) return null;
+      if(s.camm==='si') return [{head:'Pranzo a casa', tag:'dopo camminata mattino', body:
+        items([['Inizia con verdure crude o cotte di stagione + 1 cucchiaio olio EVO'],
+        ['90g pasta kamut/farro/grano saraceno/senatore cappelli (peso crudo)','80g riso/farro/orzo/cous-cous','200g gnocchi di patate']])
+        + `<div class="cond-note">Condire con sugo a base carne/pesce/vegetale</div>`}];
+      return [{head:'Pranzo a casa', tag:'no camminata / sera', body:
+        group('Scegli il carboidrato',[['60g pane fresco lievito madre','200g patate bollite/forno','2 fette pan bauletto kamut/5 cereali (tostate)']])
+        + group('Associa la proteina',[['80g tonno (sgocciolato) + 100g fagioli (cotto)'],['2 uova sode + 100g ceci (cotto)']])
+        + group('+ contorno',[['Verdure crude o cotte']])
+        + `<div class="cond-note">Condisci con: ${CONDIMENTO[0].join(' · oppure · ')}</div>`}];
+    }},
+
+  merenda: { conds:[], render:()=>[
+    {head:'Pomeriggio', tag:'pre-camminata', body: items(SNACK) +
+     `<div class="cond-note">+ nel pomeriggio bevi 750–1000ml acqua</div>`}
+  ]},
+
+  cena: { conds:[
+      {key:'camm', q:'Hai camminato nel pomeriggio?', opts:[
+        {v:'si',l:'Sì, camminata pomeriggio'},
+        {v:'no',l:'No / camminata mattino'},
+      ]},
+      {key:'prot', q:'Quale proteina scegli? (varia ogni sera)', opts:[
+        {v:'pesce',l:'Pesce bianco'},
+        {v:'mare',l:'Crostacei/molluschi'},
+        {v:'uova',l:'Uova/albume'},
+        {v:'ceci',l:'Farinata/falafel/hummus'},
+        {v:'legumi',l:'Legumi + formaggio'},
+        {v:'pollo',l:'Pollo/tacchino'},
+        {v:'rossa',l:'Carne rossa/crudo'},
+      ]}
+    ],
+    render:(s)=>{
+      if(!s.camm) return null;
+      const carb = s.camm==='si'
+        ? {label:'Carboidrato (hai camminato)', list:[['100g pane fresco lievito madre','300g patate bollite/forno','3 fette pane bauletto kamut/5 cereali','1 piadina kamut/farro']]}
+        : {label:'Carboidrato (no camminata/mattino)', list:[['60g pane fresco lievito madre','200g patate bollite/forno','2 fette pan bauletto kamut/5 cereali','400g melone']]};
+      const PROT = {
+        pesce:['250-300g pesce bianco fresco/surgelato (nasello, merluzzo, platessa, persico, sogliola, orata, spigola, branzino, verdesca) — non impanato pronto'],
+        mare:['200g crostacei/mitili/molluschi (insalata di mare, polipo e patate, seppie con piselli)'],
+        uova:['1 uovo BIO + 150g albume (strapazzate/frittata/omelette)'],
+        ceci:['Farinata di ceci (80g farina + 1 cucch. olio + 240ml acqua)','150g falafel di ceci','150g hummus ceci + 50g philadelphia light'],
+        legumi:['150g legumi (cotto) + 100g feta','1 mozzarella light + 5 alici + pomodoro (caprese)'],
+        pollo:['200g carne pollo o tacchino'],
+        rossa:['180g carne rossa vitello/manzo (tagli magri)','90g crudo o bresaola'],
+      };
+      let body = group(carb.label, carb.list);
+      if(s.prot){
+        body += group('La tua proteina', [PROT[s.prot]]);
+        body += group('+ contorno', [['Verdure crude o cotte di stagione']]);
+        body += `<div class="cond-note">Condisci con: ${CONDIMENTO[0].join(' · oppure · ')}</div>`;
+      }
+      return [{head:'Cena', body}];
+    }},
+};
+
+/* ---------- STATE + RENDER ---------- */
+let state = { meal:null, sel:{} };
+
+function renderMeals(){
+  const el = document.getElementById('meals');
+  el.innerHTML = MEALS.map(m=>`
+    <button class="meal-btn ${state.meal===m.id?'active':''}" data-meal="${m.id}">
+      <span class="m-emoji">${m.emoji}</span>
+      <span class="m-name">${m.name}</span>
+      <span class="m-sub">${m.sub}</span>
+    </button>`).join('');
+  el.querySelectorAll('.meal-btn').forEach(b=>{
+    b.onclick=()=>{ state.meal=b.dataset.meal; state.sel={}; renderAll();
+      document.getElementById('conditions').scrollIntoView({behavior:'smooth',block:'start'}); };
+  });
+}
+
+function renderConditions(){
+  const el = document.getElementById('conditions');
+  if(!state.meal){ el.innerHTML=''; return; }
+  const cfg = CONFIG[state.meal];
+  let html='';
+  cfg.conds.forEach(c=>{
+    if(c.showIf && !c.showIf(state.sel)) return;
+    html += `<div class="cond-q">${c.q}</div><div class="cond-opts">`;
+    c.opts.forEach(o=>{
+      const active = state.sel[c.key]===o.v ? 'active':'';
+      html += `<button class="chip ${active}" data-k="${c.key}" data-v="${o.v}">${o.l}</button>`;
+    });
+    html += `</div>`;
+  });
+  el.innerHTML = html;
+  el.querySelectorAll('.chip').forEach(ch=>{
+    ch.onclick=()=>{
+      const k=ch.dataset.k, v=ch.dataset.v;
+      state.sel[k] = (state.sel[k]===v)? null : v;
+      // reset dependent answers when a parent changes
+      if(state.meal==='pranzo' && k==='dove') delete state.sel.camm;
+      renderAll();
+    };
+  });
+}
+
+function renderResults(){
+  const el = document.getElementById('results');
+  if(!state.meal){
+    el.innerHTML = `<div class="empty"><div class="big">🍴</div>Scegli un pasto per iniziare</div>`;
+    return;
+  }
+  const cfg = CONFIG[state.meal];
+  const blocks = cfg.render(state.sel);
+  if(!blocks){
+    el.innerHTML = `<div class="empty"><div class="big">👆</div>Rispondi alle domande qui sopra</div>`;
+    return;
+  }
+  el.innerHTML = blocks.map(b=>`
+    <div class="block">
+      <div class="block-head">${b.head}${b.tag?`<span class="tag">${b.tag}</span>`:''}</div>
+      <div class="block-body">${b.body}</div>
+    </div>`).join('') + reminderFor(state.meal);
+}
+
+function reminderFor(meal){
+  const R = {
+    colazione:'Nella mattinata bevi <b>750–1000ml acqua</b>. Metà mattina: 1L acqua con 1 stick DREN.',
+    pranzo:'Ricorda: evita fritture, limita la griglia. Nel pomeriggio 1L acqua con 1 stick ALKALIN.',
+    cena:'Durante la camminata: 1 bustina Sali Mg e K senza zuccheri in 500ml acqua.',
+    risveglio:'Bevi almeno 2,5L acqua al giorno (basso residuo, pH >7,5).',
+    merenda:'',
+  };
+  return R[meal] ? `<div class="reminder"><span>💧</span><span>${R[meal]}</span></div>` : '';
+}
+
+function renderAll(){ renderConditions(); renderResults(); }
+
+renderMeals();
+renderAll();
+
+/* register service worker for offline use */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
